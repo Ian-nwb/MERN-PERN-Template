@@ -1,0 +1,34 @@
+# 🗄️ Database Setup Guide (Matahari DB)
+
+This project uses **PostgreSQL** managed via Docker. Follow these steps to get your local environment running.
+
+### 1. Start the Containers
+Run the following command in your terminal at the root of the project:
+```bash
+docker-compose up -d
+2. Stop the Containers
+To stop the database without deleting data:
+
+Bash
+docker-compose stop
+3. Connection Credentials (Hardcoded)
+If you are connecting via a GUI (DBeaver, TablePlus) or configuring your .env, use these:
+
+Host: localhost (from Windows/Host) or db (from inside Docker)
+
+Port: 5432
+
+User: centaim
+
+Password: projectmataharibackend120903
+
+Database: matahari_db
+
+4. Database Web UI (pgAdmin)
+Access the web manager at: http://localhost:5050
+
+Login Email: admin@centaim.com
+
+Login Password: projectmataharibackend120903
+
+

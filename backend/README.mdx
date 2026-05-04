@@ -1,0 +1,297 @@
+---
+title: Backend API Boilerplate
+author: Backend Developer
+description: High-performance Modular Monolith with Layered MVC Architecture
+version: 1.0.0
+tags: [nodejs, express, mongodb, postgresql, socket.io, redis, bullmq]
+---
+
+# Backend API Boilerplate
+
+> High-performance Modular Monolith — Layered MVC Architecture with real-time support, enterprise-grade security, and strict separation of concerns.
+
+| Meta | Value |
+|------|-------|
+| Pattern | 4-Tier Layered MVC |
+| Runtime | Node.js |
+| Entry Point | `src/index.js` |
+| Author | Backend Developer |
+
+---
+
+## 🏢 Backend Architecture Overview
+
+This boilerplate utilizes a **4-Tier Layered MVC Architecture** designed for:
+
+- High security via middleware guards and JWT authentication
+- Real-time updates via Socket.io
+- Enterprise scalability with modular separation
+- Strict **Separation of Concerns** to ensure maintainable and testable code
+
+---
+
+## 📂 Master Folder Structure
+
+```
+src/
+├── configs/          # DB, Redis, env connection setups
+├── controllers/      # HTTP req/res handlers — zero logic
+├── database/         # DB initialization and seed helpers
+├── deprecated/       # 🗑 Legacy code — DO NOT IMPORT
+├── dtos/             # Zod Data Transfer Objects
+├── errors/           # Custom error classes
+├── events/           # Internal domain event bus (NEW)
+├── jobs/             # Cron jobs and scheduled tasks
+├── logs/             # Winston + Morgan audit logs
+├── middleware/        # Auth, rate limiters, Helmet, CSP
+├── models/           # Mongoose / Prisma schemas
+├── queues/           # BullMQ producers & consumers (NEW)
+├── cache/            # Redis cache abstraction layer (NEW)
+├── repositories/     # CRUD — only layer touching the DB
+├── routes/           # URL → Controller mapping
+├── scripts/          # One-time seed / migration tools
+├── services/         # Business rules and core logic
+├── sockets/          # Socket.io event handlers
+├── storage/          # Local file uploads (Multer)
+├── tests/            # Jest unit and integration tests
+├── types/            # Shared TS interfaces & enums (NEW)
+├── utils/            # JWT, Bcrypt, date helpers
+├── workers/          # Worker threads for CPU tasks
+└── index.js          # App entry point
+```
+
+---
+
+## 🏛️ Core Layers
+
+| Folder | Role | Responsibility |
+|--------|------|----------------|
+| `routes/` | Router | The API map. Connects URLs to specific Controllers. |
+| `controllers/` | Handler | The waiters. Handle HTTP req/res with **zero** business logic. |
+| `services/` | Logic | The brain. Business rules, calculations, and orchestration. |
+| `repositories/` | Data | The librarian. **Only** folder allowed to touch the Database (CRUD). |
+| `models/` | Schema | The blueprints. Mongoose/Prisma schemas defining data structure. |
+
+---
+
+## 🛡️ Security & Operations
+
+| Folder | Role | Responsibility |
+|--------|------|----------------|
+| `dtos/` | Validation | Data Transfer Objects — define the shape of data between layers via Zod. |
+| `middleware/` | Guard | Global guards: Auth, Rate Limiters, Helmet, CORS, CSP enforcement. |
+| `errors/` | Errors | Custom Error Classes for typed exceptions and professional API responses. |
+| `logs/` | Audit | Security camera. Stores Winston audit trails and Morgan HTTP logs. |
+
+---
+
+## ⚡ Extensions & Utilities
+
+| Folder | Role | Responsibility |
+|--------|------|----------------|
+| `sockets/` | Real-time | Socket.io push event handlers and emitters. |
+| `jobs/` | Scheduler | Cron jobs, scheduled reports, periodic syncs (node-cron). |
+| `workers/` | Threads | Worker threads for CPU-intensive background processing. |
+| `queues/` | Queue ✦ | BullMQ producers/consumers — emails, webhooks, image processing. |
+| `events/` | Bus ✦ | Internal domain event bus to decouple services from each other. |
+| `cache/` | Cache ✦ | Redis cache abstraction with TTL management and cache-aside helpers. |
+| `scripts/` | Tools | One-time tools: seed data, migrations, environment bootstrapping. |
+| `storage/` | Files | Local Multer-managed uploads — resumes, avatars, documents. |
+| `utils/` | Helpers | Pure helpers — JWT, Bcrypt, date formatters, string sanitizers. |
+| `configs/` | Config | Centralized connections — MongoDB, Redis, environment config loaders. |
+| `tests/` | Testing | Jest-powered unit and integration test suites per feature module. |
+| `types/` | Types ✦ | Shared TypeScript interfaces and enums — single source of truth. |
+
+> ✦ Recommended additions for production-grade deployments.
+
+---
+
+## 🛑 Legacy & Cleanup
+
+| Folder | Responsibility |
+|--------|----------------|
+| `deprecated/` | The Trash Can. Old logic or legacy code kept for reference only. **DO NOT IMPORT FROM HERE.** Archive unused logic before deleting. Anything here is dead code and must never affect runtime behavior. |
+
+---
+
+## 📦 Installation Guide
+
+### 1. Core Framework & Database
+
+```bash
+npm install express mongoose dotenv cors
+```
+
+### 2. Security Shield
+
+```bash
+npm install helmet zod express-rate-limit jsonwebtoken bcryptjs
+```
+
+### 3. Real-Time & Performance
+
+```bash
+npm install socket.io redis
+```
+
+### 4. Logging & Infrastructure
+
+```bash
+npm install morgan winston
+```
+
+### 5. Queues & Background Jobs
+
+```bash
+npm install bullmq ioredis node-cron
+```
+
+### 6. PostgreSQL (Optional)
+
+```bash
+npm install pg @prisma/client
+npm install -D prisma
+```
+
+---
+
+## 🔄 The "Golden" Request Flow
+
+All data **must** travel in this exact order. Breaking the flow breaks the architecture.
+
+```
+Client
+  ↓
+routes/         → URL resolution — unknown paths rejected 404
+  ↓
+middleware/     → JWT auth, rate limiting, Zod DTO validation, Helmet headers
+  ↓
+controllers/    → Receive validated data, delegate to service, return response
+  ↓
+services/       → Business logic, calculations, orchestration
+  ↓
+repositories/   → CRUD operations — ONLY layer with DB access
+  ↓
+models/         → Schema enforcement — Mongoose validators / Prisma type safety
+  ↓
+Response → Client  (JSON payload + optional Socket.io real-time push event)
+```
+
+### Flow Rules
+
+1. **Never skip a layer** — controllers must not call repositories directly.
+2. **Services own logic** — no `if/else` business logic in controllers or repositories.
+3. **Repositories own data** — no raw DB queries in services or controllers.
+4. **DTOs validate at entry** — all external input must be validated before reaching a controller.
+5. **Errors bubble up** — throw custom error classes; let the global error middleware handle responses.
+
+---
+
+## 🏗️ Example: User Feature Module
+
+```
+src/
+├── routes/         user.routes.js
+├── controllers/    user.controller.js
+├── services/       user.service.js
+├── repositories/   user.repository.js
+├── models/         user.model.js
+├── dtos/           user.dto.js
+└── tests/          user.test.js
+```
+
+### Route → Controller wiring
+
+```js
+// routes/user.routes.js
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { validateBody } from '../middleware/validate.middleware.js';
+import { CreateUserDto } from '../dtos/user.dto.js';
+import { UserController } from '../controllers/user.controller.js';
+
+const router = Router();
+const ctrl = new UserController();
+
+router.post('/', validateBody(CreateUserDto), ctrl.create);
+router.get('/:id', authenticate, ctrl.findById);
+
+export default router;
+```
+
+### Service → Repository pattern
+
+```js
+// services/user.service.js
+export class UserService {
+  constructor(private repo = new UserRepository()) {}
+
+  async createUser(dto) {
+    const existing = await this.repo.findByEmail(dto.email);
+    if (existing) throw new ConflictError('Email already registered');
+    const hashed = await bcrypt.hash(dto.password, 12);
+    return this.repo.create({ ...dto, password: hashed });
+  }
+}
+```
+
+---
+
+## 🌐 Environment Variables
+
+```env
+# App
+NODE_ENV=development
+PORT=3000
+
+# MongoDB
+MONGO_URI=mongodb://localhost:27017/mydb
+
+# PostgreSQL (optional)
+DATABASE_URL=postgresql://user:password@localhost:5432/mydb
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Auth
+JWT_SECRET=your_super_secret_key
+JWT_EXPIRES_IN=7d
+
+# Storage
+UPLOAD_DIR=./src/storage/uploads
+MAX_FILE_SIZE=5242880
+```
+
+---
+
+## 🧪 Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Watch mode
+npm run test:watch
+
+# Coverage report
+npm run test:coverage
+```
+
+---
+
+## 📜 Architecture Rules (Enforced)
+
+- ✅ Controllers delegate to services — never contain logic
+- ✅ Services call repositories — never touch `Model` directly
+- ✅ Repositories use models — never raw DB drivers outside this layer
+- ✅ DTOs validate all external input at the middleware layer
+- ✅ All errors must extend the base `AppError` class
+- ✅ Socket events live in `sockets/` — never inline in routes
+- ✅ Scheduled tasks live in `jobs/` — never `setInterval` in services
+- ❌ No imports from `deprecated/`
+- ❌ No DB queries outside `repositories/`
+- ❌ No business logic in `controllers/`
+
+---
+
+*Backend API Boilerplate — v1.0.0*

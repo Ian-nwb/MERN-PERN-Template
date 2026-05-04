@@ -1,0 +1,222 @@
+# ============================================================
+#  Backend API Boilerplate — .gitignore
+#  4-Tier Layered MVC | Node.js + Express + MongoDB/PostgreSQL
+# ============================================================
+
+
+# ──────────────────────────────────────────
+#  ENVIRONMENT & SECRETS
+# ──────────────────────────────────────────
+.env
+.env.*
+!.env.example          # always keep the example template
+
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+secrets/
+credentials/
+
+
+# ──────────────────────────────────────────
+#  NODE MODULES
+# ──────────────────────────────────────────
+node_modules/
+.npm/
+.pnp/
+.pnp.js
+.yarn/
+yarn-error.log
+
+
+# ──────────────────────────────────────────
+#  LOGS — src/logs/
+#  Keep the folder, ignore the log files
+# ──────────────────────────────────────────
+src/logs/*.log
+src/logs/*.json
+src/logs/*.txt
+src/logs/archive/
+
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# ──────────────────────────────────────────
+#  STORAGE — src/storage/
+#  Keep the folder structure, ignore uploads
+# ──────────────────────────────────────────
+src/storage/uploads/*
+src/storage/temp/*
+src/storage/cache/*
+!src/storage/uploads/.gitkeep
+!src/storage/temp/.gitkeep
+!src/storage/cache/.gitkeep
+
+# Common uploaded file types
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.svg
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.csv
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+*.mp4
+*.mp3
+*.mov
+*.avi
+
+
+# ──────────────────────────────────────────
+#  DATABASE
+# ──────────────────────────────────────────
+# SQLite (if used locally)
+*.sqlite
+*.sqlite3
+*.db
+
+# Prisma generated client (regenerated on install)
+src/database/generated/
+node_modules/.prisma/
+
+# MongoDB local data
+data/
+dump/
+
+
+# ──────────────────────────────────────────
+#  CACHE — src/cache/
+# ──────────────────────────────────────────
+src/cache/*.json
+.cache/
+.parcel-cache/
+
+
+# ──────────────────────────────────────────
+#  TESTS — src/tests/
+# ──────────────────────────────────────────
+coverage/
+.nyc_output/
+junit.xml
+test-results/
+src/tests/__snapshots__/
+
+
+# ──────────────────────────────────────────
+#  BUILD OUTPUT
+# ──────────────────────────────────────────
+dist/
+build/
+out/
+.next/
+.nuxt/
+.output/
+
+
+# ──────────────────────────────────────────
+#  SCRIPTS — src/scripts/
+#  Ignore generated/output artifacts from scripts
+# ──────────────────────────────────────────
+src/scripts/output/
+src/scripts/tmp/
+src/scripts/*.csv
+src/scripts/*.json
+!src/scripts/seed.js
+!src/scripts/migrate.js
+
+
+# ──────────────────────────────────────────
+#  WORKERS — src/workers/
+# ──────────────────────────────────────────
+src/workers/tmp/
+
+
+# ──────────────────────────────────────────
+#  QUEUES — src/queues/
+# ──────────────────────────────────────────
+src/queues/failed/
+src/queues/tmp/
+
+
+# ──────────────────────────────────────────
+#  DEPRECATED — src/deprecated/
+#  Entire folder is dead code — never deploy
+# ──────────────────────────────────────────
+src/deprecated/
+
+
+# ──────────────────────────────────────────
+#  DOCKER
+# ──────────────────────────────────────────
+# Keep docker-compose.yaml but ignore overrides & volumes
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.yml
+!docker-compose.yaml
+.docker/
+volumes/
+
+
+# ──────────────────────────────────────────
+#  OS GENERATED
+# ──────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V8
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+
+# ──────────────────────────────────────────
+#  EDITOR & IDE
+# ──────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json   # share recommended extensions
+!.vscode/settings.json     # share workspace settings
+.idea/
+*.iml
+*.suo
+*.user
+*.swp
+*.swo
+*~
+.history/
+
+
+# ──────────────────────────────────────────
+#  TYPESCRIPT (if migrating to TS)
+# ──────────────────────────────────────────
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+
+# ──────────────────────────────────────────
+#  MISCELLANEOUS
+# ──────────────────────────────────────────
+*.pid
+*.seed
+*.pid.lock
+.lock-wscript
+.node_repl_history
+.eslintcache
+.stylelintcache
+.prettiercache
