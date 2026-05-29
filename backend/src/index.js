@@ -25,12 +25,40 @@ app.use(cookieParser());
 // ====================== ROUTES ======================
 app.use('/api', routes);
 
+// ====================== HEALTH CHECK ENDPOINT ======================
+app.get('/health', async (req, res) => {
+  const healthCheck = {
+    uptime: process.uptime(),
+    message: 'OK',
+    timestamp: Date.now(),
+    services: {
+      server: 'UP',
+      database: 'DOWN',
+    },
+  };
+
+  try {
+    // Run a lightweight query to test the actual DB connection
+    await pool.query('SELECT 1');
+    healthCheck.services.database = 'UP';
+    
+    // Everything is healthy
+    res.status(200).json(healthCheck);
+  } catch (error) {
+    healthCheck.message = error.message;
+    healthCheck.services.database = 'DOWN';
+    
+    // Return a 503 Service Unavailable if the database connection fails
+    res.status(503).json(healthCheck);
+  }
+});
+
 // ====================== SERVER INITIALIZATION ======================
 app.listen(port, async () => {
   console.log('--------------------------------------------------');
   console.log(`Express Server : Running on http://localhost:${port}`);
-
-  console.log(`Database    : Available at http://localhost:5050`);
+  console.log(`Health Check   : Available at http://localhost:${port}/health`);
+  console.log(`Database       : Configuration loaded for ${process.env.DB_NAME}`);
   console.log('--------------------------------------------------');
 });
 
