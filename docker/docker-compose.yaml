@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # --- PostgreSQL Setup ---
   db:
@@ -52,6 +54,36 @@ services:
       - "8081:8081"
     depends_on:
       - mongodb
+
+  # --- Express Backend Setup ---
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mern_backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      # Use these connection strings inside your Node app to connect over the Docker network:
+      - POSTGRES_URI=postgres://boilerplate:pass_boilerplate@db:5432/boilerplate_db
+      - MONGO_URI=mongodb://boilerplate:pass_boilerplate@mongodb:27017/boilerplate_db?authSource=admin
+    depends_on:
+      - db
+      - mongodb
+
+  # --- React Frontend Setup ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mern_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
 
 volumes:
   pgdata_boilerplate:
