@@ -2,8 +2,8 @@
 title: Backend API Boilerplate
 author: Backend Developer
 description: High-performance Modular Monolith with Layered MVC Architecture
-version: 1.0.0
-tags: [nodejs, express, mongodb, postgresql, socket.io, redis, bullmq]
+version: 1.1.0
+tags: [nodejs, express, mongodb, postgresql, socket.io, redis, bullmq, sse]
 ---
 
 # Backend API Boilerplate
@@ -24,7 +24,7 @@ tags: [nodejs, express, mongodb, postgresql, socket.io, redis, bullmq]
 This boilerplate utilizes a **4-Tier Layered MVC Architecture** designed for:
 
 - High security via middleware guards and JWT authentication
-- Real-time updates via Socket.io
+- Real-time updates via Socket.io and Server-Sent Events (SSE)
 - Enterprise scalability with modular separation
 - Strict **Separation of Concerns** to ensure maintainable and testable code
 
@@ -34,6 +34,7 @@ This boilerplate utilizes a **4-Tier Layered MVC Architecture** designed for:
 
 ```
 src/
+├── cache/            # Redis cache abstraction layer (NEW)
 ├── configs/          # DB, Redis, env connection setups
 ├── controllers/      # HTTP req/res handlers — zero logic
 ├── database/         # DB initialization and seed helpers
@@ -46,16 +47,17 @@ src/
 ├── middleware/        # Auth, rate limiters, Helmet, CSP
 ├── models/           # Mongoose / Prisma schemas
 ├── queues/           # BullMQ producers & consumers (NEW)
-├── cache/            # Redis cache abstraction layer (NEW)
 ├── repositories/     # CRUD — only layer touching the DB
 ├── routes/           # URL → Controller mapping
 ├── scripts/          # One-time seed / migration tools
 ├── services/         # Business rules and core logic
 ├── sockets/          # Socket.io event handlers
+├── sse/              # Server-Sent Events handlers (NEW)
 ├── storage/          # Local file uploads (Multer)
 ├── tests/            # Jest unit and integration tests
 ├── types/            # Shared TS interfaces & enums (NEW)
 ├── utils/            # JWT, Bcrypt, date helpers
+├── validators/       # Standalone request validation schemas (NEW)
 ├── workers/          # Worker threads for CPU tasks
 └── index.js          # App entry point
 ```
@@ -79,6 +81,7 @@ src/
 | Folder | Role | Responsibility |
 |--------|------|----------------|
 | `dtos/` | Validation | Data Transfer Objects — define the shape of data between layers via Zod. |
+| `validators/` | Validation ✦ | Standalone schema validators (Joi/express-validator) — used where a full DTO is overkill, e.g. param/query checks. |
 | `middleware/` | Guard | Global guards: Auth, Rate Limiters, Helmet, CORS, CSP enforcement. |
 | `errors/` | Errors | Custom Error Classes for typed exceptions and professional API responses. |
 | `logs/` | Audit | Security camera. Stores Winston audit trails and Morgan HTTP logs. |
@@ -89,7 +92,8 @@ src/
 
 | Folder | Role | Responsibility |
 |--------|------|----------------|
-| `sockets/` | Real-time | Socket.io push event handlers and emitters. |
+| `sockets/` | Real-time | Socket.io push event handlers and emitters (bi-directional). |
+| `sse/` | Real-time ✦ | Server-Sent Events handlers — one-way server→client streams (notifications, live feeds, progress updates) without socket overhead. |
 | `jobs/` | Scheduler | Cron jobs, scheduled reports, periodic syncs (node-cron). |
 | `workers/` | Threads | Worker threads for CPU-intensive background processing. |
 | `queues/` | Queue ✦ | BullMQ producers/consumers — emails, webhooks, image processing. |
@@ -134,6 +138,8 @@ npm install helmet zod express-rate-limit jsonwebtoken bcryptjs
 npm install socket.io redis
 ```
 
+> SSE (`sse/`) requires no extra package — implemented with native `res.write()` + `Content-Type: text/event-stream`.
+
 ### 4. Logging & Infrastructure
 
 ```bash
@@ -146,7 +152,15 @@ npm install morgan winston
 npm install bullmq ioredis node-cron
 ```
 
-### 6. PostgreSQL (Optional)
+### 6. Standalone Validation (Optional)
+
+```bash
+npm install joi
+# or
+npm install express-validator
+```
+
+### 7. PostgreSQL (Optional)
 
 ```bash
 npm install pg @prisma/client
@@ -166,6 +180,8 @@ routes/         → URL resolution — unknown paths rejected 404
   ↓
 middleware/     → JWT auth, rate limiting, Zod DTO validation, Helmet headers
   ↓
+validators/     → (optional) lightweight param/query checks not covered by DTOs
+  ↓
 controllers/    → Receive validated data, delegate to service, return response
   ↓
 services/       → Business logic, calculations, orchestration
@@ -174,7 +190,7 @@ repositories/   → CRUD operations — ONLY layer with DB access
   ↓
 models/         → Schema enforcement — Mongoose validators / Prisma type safety
   ↓
-Response → Client  (JSON payload + optional Socket.io real-time push event)
+Response → Client  (JSON payload + optional Socket.io / SSE real-time push)
 ```
 
 ### Flow Rules
@@ -184,6 +200,7 @@ Response → Client  (JSON payload + optional Socket.io real-time push event)
 3. **Repositories own data** — no raw DB queries in services or controllers.
 4. **DTOs validate at entry** — all external input must be validated before reaching a controller.
 5. **Errors bubble up** — throw custom error classes; let the global error middleware handle responses.
+6. **Real-time channel choice** — use `sockets/` for bi-directional/interactive features (chat, presence); use `sse/` for simple one-way streams (live updates, notifications, progress bars).
 
 ---
 
@@ -197,6 +214,7 @@ src/
 ├── repositories/   user.repository.js
 ├── models/         user.model.js
 ├── dtos/           user.dto.js
+├── validators/     user.validator.js
 └── tests/          user.test.js
 ```
 
@@ -232,6 +250,27 @@ export class UserService {
     const hashed = await bcrypt.hash(dto.password, 12);
     return this.repo.create({ ...dto, password: hashed });
   }
+}
+```
+
+### SSE handler pattern
+
+```js
+// sse/notifications.sse.js
+export function notificationsStream(req, res) {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+  const unsubscribe = eventBus.on('notification', send);
+
+  req.on('close', () => {
+    unsubscribe();
+    res.end();
+  });
 }
 ```
 
@@ -285,8 +324,10 @@ npm run test:coverage
 - ✅ Services call repositories — never touch `Model` directly
 - ✅ Repositories use models — never raw DB drivers outside this layer
 - ✅ DTOs validate all external input at the middleware layer
+- ✅ `validators/` only for lightweight checks not already covered by DTOs (avoid duplicating validation logic)
 - ✅ All errors must extend the base `AppError` class
 - ✅ Socket events live in `sockets/` — never inline in routes
+- ✅ SSE streams live in `sse/` — never inline in routes
 - ✅ Scheduled tasks live in `jobs/` — never `setInterval` in services
 - ❌ No imports from `deprecated/`
 - ❌ No DB queries outside `repositories/`
@@ -294,4 +335,4 @@ npm run test:coverage
 
 ---
 
-*Backend API Boilerplate — v1.0.0*
+*Backend API Boilerplate — v1.1.0*
